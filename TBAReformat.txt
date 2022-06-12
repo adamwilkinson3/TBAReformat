@@ -1,0 +1,175 @@
+Sub TBAReformat()
+
+
+Dim lRow As Integer
+Dim BeginningOffset As Integer
+Dim CellsPerColumn As Integer
+Dim NumberOfColumns As Integer
+Dim Flag As Integer
+
+CellsPerColumn = 51
+NumberOfColumns = 5
+BeginningOffset = 10
+lRow = 0
+Flag = 0
+
+While StrComp(Cells(i + BeginningOffset, 1), "JOURNAL ENTRIES", vbTextCompare) <> 0
+  lRow = lRow + 1
+  i = i + 1
+Wend
+       
+       
+       
+Dim List(1 To 1000) As String
+Dim List2(1 To 1000) As String
+Dim List3(1 To 1000) As Boolean
+Dim List4(1 To 1000) As Boolean
+Dim ListFinal(1 To 1000) As String
+Dim ListFinal2(1 To 1000) As String
+Dim ListFinal3(1 To 1000) As Boolean
+Dim ListFinal4(1 To 1000) As Boolean
+Dim WrdArray() As String
+Dim text_string As String
+Dim incJ As Boolean
+
+
+j = 1
+For i = 1 To lRow
+  If IsEmpty(Cells(i + BeginningOffset, 1)) = False And StrComp(Cells(i + BeginningOffset, 5), "3. Certification for OJT", vbTextCompare) <> 0 And IsEmpty(ActiveSheet.Cells(i + BeginningOffset, 6)) = True Then          'Skips Empty Cells and keeps only not completed tasks
+    text_string = ActiveSheet.Cells(i + BeginningOffset, 1)
+    WrdArray() = Split(text_string, Chr(10))    'Chr(10) splits at the line break
+      
+    incJ = False
+    If UBound(WrdArray) > 0 Then
+      List(j) = WrdArray(1)                     'Stores 2nd line
+      incJ = True
+    End If
+    
+    Erase WrdArray
+    
+    List2(j) = ActiveSheet.Cells(i + BeginningOffset, 3)  '5 level
+      
+    If IsEmpty(Cells(i + BeginningOffset, 10)) = True Then       'Task or Header
+      List4(j) = True  'Header
+      If List(j) = UCase(List(j)) Then 'is uppercase
+        List3(j) = True
+      Else
+        List3(j) = False
+      End If
+    Else
+      List4(j) = False
+    End If
+    If incJ = True Then
+      j = j + 1
+    End If
+  End If
+ Next i
+ 
+'Excludes Empty Headers
+Dim jLast As Integer
+Dim k As Integer
+k = 1
+jLast = j
+kap = 1
+For j = 1 To jLast - 1
+  m = j
+  If List4(m) = True Then  'is a header
+    If List3(m) = True Then  'is uppercase
+      Flag = 0
+      n = m
+      While Flag = 0
+        If m <> jLast And List4(m + 1) = False Then  'next is a task
+          ListFinal(k) = List(n)
+          ListFinal2(k) = List2(n)
+          ListFinal3(k) = List3(n)
+          ListFinal4(k) = List4(n)
+          k = k + 1
+          Flag = 1
+        ElseIf m <> jLast And List3(m + 1) = True Then 'next is uppercase
+          Flag = 1
+        End If
+        m = m + 1
+      Wend
+    Else 'is not uppercase
+      If m <> jLast And List4(m + 1) = False Then  'next is a task
+        ListFinal(k) = List(m)  'add header
+        ListFinal2(k) = List2(m)
+        ListFinal3(k) = List3(m)
+        ListFinal4(k) = List4(m)
+        k = k + 1
+      End If
+    End If
+  Else
+    ListFinal(k) = List(m)  'is a task
+    ListFinal2(k) = List2(m)
+    ListFinal3(k) = List3(m)
+    ListFinal4(k) = List4(m)
+    k = k + 1
+  End If
+Next j
+
+
+'Print Arrays in new Sheet
+
+Sheets.Add
+ActiveSheet.Name = "TBA"
+
+
+Dim maincol As Integer
+Dim pagenum As Integer
+
+For i = 0 To j - 2
+  pagenum = Int(i / (CellsPerColumn * NumberOfColumns))
+  If Int(i / CellsPerColumn) Mod NumberOfColumns = 0 Then
+    maincol = 0
+  ElseIf Int(i / CellsPerColumn) Mod NumberOfColumns = 1 Then
+    maincol = 3
+  ElseIf Int(i / CellsPerColumn) Mod NumberOfColumns = 2 Then
+    maincol = 6
+  ElseIf Int(i / CellsPerColumn) Mod NumberOfColumns = 3 Then
+    maincol = 9
+  Else
+    maincol = 12
+  End If
+
+
+  Cells(((i Mod CellsPerColumn) + 1) + CellsPerColumn * pagenum, maincol + 1).Value = ListFinal(i + 1)
+  Cells(((i Mod CellsPerColumn) + 1) + CellsPerColumn * pagenum, maincol + 2).Value = ListFinal2(i + 1)
+  'If List5(i + 1) = True Then
+  '  Cells(((i Mod CellsPerColumn) + 1) + CellsPerColumn * pagenum, maincol + 3).Value = ChrW(&H2713) ‘2866917
+  'End If
+  If ListFinal4(i + 1) = True Then
+    Range(Cells(((i Mod CellsPerColumn) + 1) + CellsPerColumn * pagenum, maincol + 1), Cells(((i Mod CellsPerColumn) + 1) + CellsPerColumn * pagenum, maincol + 3)).Interior.Color = RGB(128, 128, 128)
+  End If
+Next i
+
+
+'Reformat Cells
+
+ActiveSheet.PageSetup.LeftMargin = Application.InchesToPoints(0.1)
+ActiveSheet.PageSetup.RightMargin = Application.InchesToPoints(0.1)
+ActiveSheet.PageSetup.TopMargin = Application.InchesToPoints(0.1)
+ActiveSheet.PageSetup.BottomMargin = Application.InchesToPoints(0.1)
+Rows("1:1000").RowHeight = 15
+Columns(1).ColumnWidth = 18
+Columns(4).ColumnWidth = 18
+Columns(7).ColumnWidth = 18
+Columns(10).ColumnWidth = 18
+Columns(13).ColumnWidth = 18
+Columns(2).ColumnWidth = 1
+Columns(5).ColumnWidth = 1
+Columns(8).ColumnWidth = 1
+Columns(11).ColumnWidth = 1
+Columns(14).ColumnWidth = 1
+Columns(3).ColumnWidth = 1
+Columns(6).ColumnWidth = 1
+Columns(9).ColumnWidth = 1
+Columns(12).ColumnWidth = 1
+Columns(15).ColumnWidth = 1
+Range(Cells(1, 1), Cells(CellsPerColumn * (pagenum + 1), 15)).Borders.LineStyle = xlContinuous  'change last number if column number is adjusted
+Range(Cells(1, 1), Cells(CellsPerColumn * (pagenum + 1), 15)).Font.Size = 5
+Range(Cells(1, 1), Cells(CellsPerColumn * (pagenum + 1), 15)).Font.Name = "Calibri"
+Range(Cells(1, 1), Cells(CellsPerColumn * (pagenum + 1), 15)).WrapText = True
+
+
+End Sub
